@@ -22,8 +22,8 @@ while True:
 	txtfile = open(file_name, "w+")
 	ser.write("run".encode())
 	while running:
-		newest_line = ser.readline().decode('utf-8')
-		if newest_line == "terminate scan":
+		newest_line = str(ser.readline().decode('utf-8'))[:-1]
+		if newest_line[0:14] == "terminate scan":
 			txtfile.close()
 			print("command received; scan terminated")
 			running = False
