@@ -6,6 +6,11 @@
 
 #include <Servo.h>
 #include <LIDARLite.h>
+#include "DHT.h"
+#define DHTTYPE DHT22
+const int DHTpin = 2;
+
+DHT dht(DHTpin,DHTTYPE);
 
 Servo panservo;
 Servo tiltservo;
@@ -28,6 +33,7 @@ float deg2rad = pi / 180.0;
 int currReading = 0;
 
 void setup() {
+  dht.begin();
   // set up lidar sensor
   lidar.begin(0, true);
   lidar.configure(0);
@@ -51,9 +57,11 @@ void loop() {
     int phi = 0; // rotation about y
     int beta = 0; // rotation about z
     Serial.read(); // reads the rest of the Serial line, cleaning it out
+
     //Serial.println("Input: " + String(xin) + " " + String(yin) + " " + String(zin) + " " + String(theta) + " " + String(phi) + " " + String(beta));
     runScan(xin, yin, zin, theta, phi, beta);
     Serial.println("terminate scan");
+
     delay(100);
     serialFlush();
   }
@@ -80,6 +88,9 @@ void runScan(long dcpx, long dcpy, long dcpz, int dcptheta, int dcpphi, int dcpb
       if (posPan==maxPanAngle){
         delay(1000);
       }
+      // record temperature humidity data
+      float h = dht.readHumidity();
+      float t = dht.readTemperature();
       currReading = 10*lidar.distance(); // in mm
       dist = l1 + currReading;
       beta = -posPan+90;
@@ -87,7 +98,7 @@ void runScan(long dcpx, long dcpy, long dcpz, int dcptheta, int dcpphi, int dcpb
       xreading = - dist * sin(beta*deg2rad) * cos(gamma*deg2rad);
       yreading = l0 * cos(alpha*deg2rad) - dist * (-cos(alpha*deg2rad)*sin(gamma*deg2rad) - sin(alpha*deg2rad)*cos(beta*deg2rad)*cos(gamma*deg2rad)) ;
       zreading = l0*sin(alpha*deg2rad) - dist*(-sin(alpha*deg2rad)*sin(gamma*deg2rad) + cos(alpha*deg2rad) * cos(beta*deg2rad) * cos(gamma*deg2rad));
-      Serial.println(String(xreading) + " " + String(yreading) + " " + String(zreading));
+      Serial.println(String(xreading) + " " + String(yreading) + " " + String(zreading) + " " + String(h) + " " + String(t));
       delay(10);
     }
     
