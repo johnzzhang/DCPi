@@ -9,6 +9,7 @@
 #include "DHT.h"
 #define DHTTYPE DHT22
 const int DHTpin = 2;
+const int windDirPin = A0;
 
 DHT dht(DHTpin,DHTTYPE);
 
@@ -43,6 +44,8 @@ void setup() {
   tiltservo.attach(9);
   panservo.write(posPan);
   tiltservo.write(posTilt);
+
+  pinMode(windDirPin,INPUT);
   
   Serial.begin(9600);
 }
@@ -73,6 +76,8 @@ void runScan(long dcpx, long dcpy, long dcpz, int dcptheta, int dcpphi, int dcpb
   int xreading = 0;
   int yreading = 0;
   int zreading = 0;
+  int windSpeed = 0;
+  int windDir = 0;
   int alpha = dcptheta; //-30;
   int beta = -posPan+90;
   int gamma = posTilt-90;
@@ -81,6 +86,8 @@ void runScan(long dcpx, long dcpy, long dcpz, int dcptheta, int dcpphi, int dcpb
   int dist = 0;
   for (posTilt = minTiltAngle; posTilt < maxTiltAngle; posTilt++){
     tiltservo.write(posTilt);
+    float h = dht.readHumidity();
+    float t = dht.readTemperature();
 
     // scan sweeping left
     for (posPan = maxPanAngle; posPan > minPanAngle; posPan--){
@@ -89,8 +96,6 @@ void runScan(long dcpx, long dcpy, long dcpz, int dcptheta, int dcpphi, int dcpb
         delay(1000);
       }
       // record temperature humidity data
-      float h = dht.readHumidity();
-      float t = dht.readTemperature();
       currReading = 10*lidar.distance(); // in mm
       dist = l1 + currReading;
       beta = -posPan+90;
@@ -98,7 +103,8 @@ void runScan(long dcpx, long dcpy, long dcpz, int dcptheta, int dcpphi, int dcpb
       xreading = - dist * sin(beta*deg2rad) * cos(gamma*deg2rad);
       yreading = l0 * cos(alpha*deg2rad) - dist * (-cos(alpha*deg2rad)*sin(gamma*deg2rad) - sin(alpha*deg2rad)*cos(beta*deg2rad)*cos(gamma*deg2rad)) ;
       zreading = l0*sin(alpha*deg2rad) - dist*(-sin(alpha*deg2rad)*sin(gamma*deg2rad) + cos(alpha*deg2rad) * cos(beta*deg2rad) * cos(gamma*deg2rad));
-      Serial.println(String(xreading) + " " + String(yreading) + " " + String(zreading) + " " + String(h) + " " + String(t));
+      windDir = analogRead(windDirPin);
+      Serial.println(String(xreading) + " " + String(yreading) + " " + String(zreading) + " " + String(h) + " " + String(t) + " " + String(windDir));
       delay(10);
     }
     
